@@ -94,6 +94,7 @@
     .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--btn-text); border: none; }
     .btn.primary:hover { box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent); background: linear-gradient(135deg, var(--accent), var(--accent2)); }
     .btn.small { padding: .45rem 1rem; font-size: .85rem; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
     /* Hero */
     .hero { position: relative; padding: 130px 0 60px; overflow: hidden; }
@@ -475,6 +476,12 @@
   <button id="top" type="button" aria-label="Back to top">↑</button>
   <div id="toast" role="status" aria-live="polite"></div>
 
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    emailjs.init({ publicKey: '6WiJEzFo59omGM5Ec' });
+  </script>
+
   <script>
     (function () {
       var root = document.documentElement;
@@ -619,23 +626,45 @@
       /* Year */
       document.getElementById('year').textContent = new Date().getFullYear();
 
-      /* Contact form: opens the email app with the message */
+      /* Contact form: sends the message with EmailJS */
       var form = document.getElementById('form');
       var msg = document.getElementById('msg');
+      var sendBtn = form.querySelector('button[type="submit"]');
+
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        var name = form.name.value.trim();
-        var email = form.email.value.trim();
-        var text = form.message.value.trim();
+        var name = form.elements['name'].value.trim();
+        var email = form.elements['email'].value.trim();
+        var text = form.elements['message'].value.trim();
+
         if (!name || !email || !text || email.indexOf('@') < 1) {
           msg.textContent = 'Please fill all fields with a correct email.';
           return;
         }
-        var subject = encodeURIComponent('Portfolio message from ' + name);
-        var body = encodeURIComponent(text + '\n\nFrom: ' + name + ' (' + email + ')');
-        window.location.href = 'mailto:dineshnandhan07@gmail.com?subject=' + subject + '&body=' + body;
-        msg.textContent = 'Opening your email app...';
-        form.reset();
+
+        if (typeof emailjs === 'undefined') {
+          msg.textContent = 'Could not send. Please email me directly.';
+          return;
+        }
+
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+        msg.textContent = '';
+
+        emailjs.send('service_97wmp7s', 'template_h3yafrm', {
+          from_name: name,
+          from_email: email,
+          message: text
+        }).then(function () {
+          msg.textContent = 'Message sent! I will reply soon.';
+          form.reset();
+        }, function (err) {
+          console.error('EmailJS error:', err);
+          msg.textContent = 'Could not send. Please email me directly.';
+        }).finally(function () {
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Send message';
+        });
       });
     })();
   </script>
